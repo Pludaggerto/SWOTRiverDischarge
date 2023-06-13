@@ -8,10 +8,10 @@ import netCDF4 as nc
 workspace = r"C:\Users\lwx\Desktop"
 plt.rc('font',family='Arial') 
 
-name = "Jamuna"
+name = "SeineDownstream"
 # data
-fileList = glob.glob(os.path.join(workspace, "*_geoBAM.txt"))
-result = pd.read_csv(os.path.join(workspace, name + '_w.txt'))
+data   = pd.read_csv(os.path.join(workspace, name + '.txt'))
+data_w = pd.read_csv(os.path.join(workspace, name + '_w.txt'))
 
 def time2date(string):
     trueData = pd.read_csv(os.path.join(workspace, "discharge.csv"))
@@ -24,11 +24,21 @@ def time2date(string):
 # true 
 # result["date"] = result["time"].apply(time2date)
 # result["date"] = pd.to_datetime(result["date"])
-result["flow($m^3/s$)"] = result["flow"]
-ax = sns.lineplot(x="time", y="flow($m^3/s$)",
-             hue="stat", style="series", alpha = 0.5, linewidth = 2,
-             data=result)
 
+data["flow($m^3/s$)"] = data["flow"]
+data = data[data["stat"] == "mean"]
+
+data_w["flow($m^3/s$)"] = data_w["flow"]
+data_w = data_w[data_w["stat"] == "mean"]
+
+data = data.groupby("time").mean()
+data_w = data_w.groupby("time").mean()
+
+fig, ax = plt.subplots(1, 1, figsize=(9, 6))
+ax.plot(data.index, data["flow($m^3/s$)"], alpha = 0.5, linewidth = 2, label = "W,S,dA")
+               
+ax.plot(data_w.index, data_w["flow($m^3/s$)"], alpha = 0.5, linewidth = 2, label = "only W")
+          
 trueData = nc.Dataset(os.path.join(r"D:\Desktop\Dishcarge\Ideal-Data", name + ".nc"))
 trueData = trueData["Reach_Timeseries/Q"][:].mean(axis = 1)
 #trueData.index = pd.to_datetime(trueData.index)

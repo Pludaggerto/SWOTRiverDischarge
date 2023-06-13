@@ -12,6 +12,7 @@ import numpy as np
 from tqdm import tqdm
 from dbfread import DBF
 import geopandas as gpd
+import csv
 
 class NHDGetter(object):
 
@@ -26,9 +27,11 @@ class NHDGetter(object):
         logging.info("[INFO]Getting NHD data end...")
 
     def read_and_select_slopeDBF(self):
-        for fileName in self.recordFiles:
-            table = DBF(fileName, encoding='GBK')
-            df = pd.DataFrame(iter(table))
+        table = DBF(self.recordFiles[0], encoding='GBK')
+        df = pd.DataFrame(iter(table))
+        for i in range(1, len(self.recordFiles)):
+            table = DBF(self.recordFiles[i], encoding='GBK')
+            df = df.merge(pd.DataFrame(iter(table)))
 
     def get_all_dbf_file(self, folder):
         for fileName in glob.glob(os.path.join(folder, "*")):

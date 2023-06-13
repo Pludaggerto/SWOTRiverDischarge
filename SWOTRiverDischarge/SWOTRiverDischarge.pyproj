@@ -4,13 +4,15 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>d6e1ed46-adb7-4ddd-9900-18e26e72d609</ProjectGuid>
     <ProjectHome>.</ProjectHome>
-    <StartupFile>SWOTRiverDischarge.py</StartupFile>
+    <StartupFile>Code\DataFromUSGS\Classification.py</StartupFile>
     <SearchPath>
     </SearchPath>
     <WorkingDirectory>.</WorkingDirectory>
     <OutputPath>.</OutputPath>
     <Name>SWOTRiverDischarge</Name>
     <RootNamespace>SWOTRiverDischarge</RootNamespace>
+    <InterpreterId>Global|VisualStudio|geos</InterpreterId>
+    <SuppressConfigureTestFrameworkPrompt>true</SuppressConfigureTestFrameworkPrompt>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
     <DebugSymbols>true</DebugSymbols>
@@ -28,8 +30,9 @@
     <Compile Include="Code\Data Filter\FilterOne.py" />
     <Compile Include="Code\Data Filter\WriteMetroManParams.py" />
     <Compile Include="Code\DataFromnhd\readNHD.py" />
-    <Compile Include="Code\DataFromUSGS\classification.py" />
+    <Compile Include="Code\DataFromUSGS\Classification.py" />
     <Compile Include="Code\DataFromUSGS\DataRetrieval.py" />
+    <Compile Include="Code\DataFromUSGS\MeasureMerge.py" />
     <Compile Include="Code\MetroMan-master\CalcADelta.py" />
     <Compile Include="Code\MetroMan-master\CalcB.py" />
     <Compile Include="Code\MetroMan-master\CalcdA.py" />
@@ -56,9 +59,11 @@
     <Compile Include="Code\MetroMan-master\RunExps.py" />
     <Compile Include="Code\MetroMan-master\SelObs.py" />
     <Compile Include="Code\ploting\GeoBAM.PY" />
+    <Compile Include="Code\ploting\GeoBAM3.py" />
     <Compile Include="Code\ploting\GeoBAM2.py" />
     <Compile Include="Code\Simplified calculation\BAM.py" />
     <Compile Include="SWOTRiverDischarge.py" />
+    <Compile Include="test\test1.py" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Base\" />
@@ -82,6 +87,7 @@
     <Folder Include="Code\MetroMan-master\__pycache__\" />
     <Folder Include="Code\ploting\" />
     <Folder Include="Code\Simplified calculation\" />
+    <Folder Include="test\" />
     <Folder Include="note\" />
   </ItemGroup>
   <ItemGroup>
@@ -94,6 +100,7 @@
     <Content Include="Code\Data Filter\template\params.txt" />
     <Content Include="Code\Data Filter\template\SWOTObs.txt" />
     <Content Include="Code\Data Filter\template\truth.txt" />
+    <Content Include="Code\DataFromUSGS\geoBAM_Classifications.ipynb" />
     <Content Include="Code\DataFromUSGS\peaks.txt" />
     <Content Include="Code\DataFromUSGS\StationInfo %282%29.txt" />
     <Content Include="Code\DataFromUSGS\StationInfo.txt" />
@@ -185,6 +192,9 @@
     <Content Include="note\数据介绍.md" />
     <Content Include="note\算法笔记.md" />
     <Content Include="note\论文阅读.md" />
+  </ItemGroup>
+  <ItemGroup>
+    <InterpreterReference Include="Global|VisualStudio|geos" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\Python Tools\Microsoft.PythonTools.targets" />
   <!-- Uncomment the CoreCompile target to enable the Build command in
