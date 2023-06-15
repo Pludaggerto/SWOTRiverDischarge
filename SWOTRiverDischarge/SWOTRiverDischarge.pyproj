@@ -4,7 +4,7 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>d6e1ed46-adb7-4ddd-9900-18e26e72d609</ProjectGuid>
     <ProjectHome>.</ProjectHome>
-    <StartupFile>Code\DataFromUSGS\Classification.py</StartupFile>
+    <StartupFile>Code\Classification\main.py</StartupFile>
     <SearchPath>
     </SearchPath>
     <WorkingDirectory>.</WorkingDirectory>
@@ -25,12 +25,14 @@
   <ItemGroup>
     <Compile Include="Base\readSWOT.py" />
     <Compile Include="Base\Util.py" />
+    <Compile Include="Code\Classification\Cluster.py" />
+    <Compile Include="Code\Classification\MergeData.py" />
     <Compile Include="Code\Data Filter\CalPrior.py" />
     <Compile Include="Code\Data Filter\FilterGEE.py" />
     <Compile Include="Code\Data Filter\FilterOne.py" />
     <Compile Include="Code\Data Filter\WriteMetroManParams.py" />
     <Compile Include="Code\DataFromnhd\readNHD.py" />
-    <Compile Include="Code\DataFromUSGS\Classification.py" />
+    <Compile Include="Code\Classification\main.py" />
     <Compile Include="Code\DataFromUSGS\DataRetrieval.py" />
     <Compile Include="Code\DataFromUSGS\MeasureMerge.py" />
     <Compile Include="Code\MetroMan-master\CalcADelta.py" />
@@ -85,6 +87,7 @@
     <Folder Include="Code\MetroMan-master\PepsiSac\" />
     <Folder Include="Code\MetroMan-master\PepsiSac\template\" />
     <Folder Include="Code\MetroMan-master\__pycache__\" />
+    <Folder Include="Code\Classification\" />
     <Folder Include="Code\ploting\" />
     <Folder Include="Code\Simplified calculation\" />
     <Folder Include="test\" />
