@@ -48,13 +48,18 @@ class Classification(Merger, Clusterer, ResultWriter):
         # mean shift
         self.meanShiftFolder = self.set_folder(self.mergedFolder, "meanShift")
 
+        # cluster
+        self.OPTICSFolder = self.set_folder(self.mergedFolder, "OPTICS")
+        
+        # BIRCH
+        self.BIRCHFolder = self.set_folder(self.mergedFolder, "BIRCH")
 
     def __del__(self):
         logging.info("[INFO]Classification Experiment end...")
 
     def run_all(self):
 
-        # mergeDatA
+        # mergeData
         if not os.path.exists(self.mergedDataFile):
             self.merge_NWIS_NHD()
 
@@ -68,10 +73,12 @@ class Classification(Merger, Clusterer, ResultWriter):
             self.dataDF = pd.read_csv(self.FeatureFile)       
         
         # cluster
-        self.PCA_classification()
-        self.DBSCAN_classfication()
+        self.PCA_cluster()
+        self.DBSCAN_cluster()
         self.AffinityPropagation_cluster()
         self.meanShift_cluster()
+        self.OPTICS_cluster()
+        self.BIRCH_cluster()
 
 def main():
     

@@ -13,7 +13,7 @@ from dbfread                 import DBF
 from sklearn                 import metrics
 from sklearn                 import svm
 from sklearn                 import linear_model
-from sklearn.cluster         import DBSCAN, AffinityPropagation
+from sklearn.cluster         import DBSCAN, AffinityPropagation, MeanShift, OPTICS, Birch
 from sklearn.preprocessing   import StandardScaler, normalize
 from sklearn.decomposition   import PCA
 from sklearn.metrics         import silhouette_score, calinski_harabasz_score, davies_bouldin_score
@@ -94,9 +94,7 @@ class Clusterer(object):
         output = sorted_data.loc[sorted_data['rank'] == desiredRank, colname]
         return(output)
 
-
-
-    def DBSCAN_classfication(self):
+    def DBSCAN_cluster(self):
         dataDF = self.dataDF
         features = self.dataDF[['chan_width', 'n', 'SLOPE', 'StreamOrde','DistDwnstrm', 'FCODEnorm', 'chan_depth', 'chan_velocity', 
             'unitPower', 'r', 'DASqKm', 'Fb', 'shearStress', 'minEntrain', 'TOTMA', 'sinuosity', 'velocity_var',
@@ -115,9 +113,13 @@ class Clusterer(object):
         # Renaming the columns 
         X_normalized.columns = features.columns 
         self.X_normalized = X_normalized
-
-        clustering = DBSCAN(eps = 0.55, min_samples = 5).fit(self.X_normalized)
-        labels = clustering.labels_
+        for eps in np.arange(0.1, 10, 0.1):
+            for min_samples in np.arange(1, 100, 5):
+                for leaf_size in np.arange(20, 200, 20):
+                    clustering = DBSCAN(eps = eps, min_samples = min_samples, leaf_size = leaf_size).fit(X_normalized)
+                    labels = clustering.labels_
+                    dataDF["cluster"] = labels
+                    self.judge_clustering_result(dataDF, self.mergedFolder, "DBSCAN", "eps:" + str(eps) + "_" "min_samples:" + "_" + str(min_samples) + "leaf_size:" + "_" + str(leaf_size))
 
         # Number of clusters in labels, ignoring noise if present.
         n_clusters_ = len(set(labels)) - (1 if -1 in labels else 0)
@@ -165,9 +167,6 @@ class Clusterer(object):
         priorNClass = dataDF.groupby('cluster')['logn'].describe()
         priorBClass = dataDF.groupby('cluster')['b'].describe()
 
-        
-        self.judge_clustering_result(self.dataDF, self.mergedFolder, "DBSCAN")
-
         priorWbClass.to_csv(os.path.join(self.DBSCANFolder, "Wb_DBSCAN.csv"))
 
         priorDbClass.to_csv(os.path.join(self.DBSCANFolder, "Db_DBSCAN.csv"))
@@ -180,7 +179,7 @@ class Clusterer(object):
 
         return 
     
-    def PCA_classification(self):
+    def PCA_cluster(self):
         pca_df = self.dataDF
         #run PCA on these features
         features = ['chan_width', 'n', 'SLOPE', 'StreamOrde','DistDwnstrm', 'FCODEnorm', 'chan_depth', 'chan_velocity', 
@@ -289,15 +288,23 @@ class Clusterer(object):
 
         fig.savefig(os.path.join(self.PCAFolder, "PCA.png"), dpi = 300)       
 
-    def AffinityPropagation_cluster(self):      
+    def AffinityPropagation_cluster(self):  
+        X_normalized = self.X_normalized
         AP_df = self.dataDF
         #run PCA on these features
         features = ['chan_width', 'n', 'SLOPE', 'StreamOrde','DistDwnstrm', 'FCODEnorm', 'chan_depth', 'chan_velocity', 
                     'unitPower', 'r', 'DASqKm', 'Fb', 'shearStress', 'minEntrain', 'TOTMA', 'sinuosity', 'velocity_var',
                     'depth_var','width_var', 'n_var','unitPower_var','Fb_var','shearStress_var', 'minEntrain_var']#, 
                     #'CAT_SILTAVE', 'CAT_SANDAVE', 'CAT_CLAYAVE']
-        x = AP_df.loc[:, features].values # Separating out the features
-        clustering = AffinityPropagation().fit(x)
+        x = AP_df.loc[:, features] # Separating out the features
+
+        for damping in np.arange(0.5,1,0.3):
+            clustering = AffinityPropagation(damping = damping).fit(self.X_normalized)
+            labels = clustering.labels_
+            AP_df["cluster"] = labels
+            self.judge_clustering_result(AP_df, self.mergedFolder, "AffPro", "damping:" + str(damping))
+
+        
         labels = clustering.labels_
         sns.set_style("white")
         dataDF = self.dataDF 
@@ -337,9 +344,6 @@ class Clusterer(object):
         priorA0Class = dataDF.groupby('cluster')['logA0'].describe()
         priorNClass = dataDF.groupby('cluster')['logn'].describe()
         priorBClass = dataDF.groupby('cluster')['b'].describe()
-
-        
-        self.judge_clustering_result(self.dataDF, self.mergedFolder, "AffPro")
 
         priorWbClass.to_csv(os.path.join(self.AffinityPropagationFolder, "Wb_AffPro.csv"))
 
@@ -360,7 +364,7 @@ class Clusterer(object):
                     'depth_var','width_var', 'n_var','unitPower_var','Fb_var','shearStress_var', 'minEntrain_var']#, 
                     #'CAT_SILTAVE', 'CAT_SANDAVE', 'CAT_CLAYAVE']
         x = meanshift_df.loc[:, features].values # Separating out the features
-        clustering = AffinityPropagation().fit(x)
+        clustering = MeanShift().fit(x)
         labels = clustering.labels_
         sns.set_style("white")
         dataDF = self.dataDF 
@@ -402,7 +406,7 @@ class Clusterer(object):
         priorBClass = dataDF.groupby('cluster')['b'].describe()
 
         
-        self.judge_clustering_result(self.dataDF, self.mergedFolder, "meanshift")
+        self.judge_clustering_result(dataDF, self.mergedFolder, "meanshift")
 
         priorWbClass.to_csv(os.path.join(self.meanShiftFolder, "Wb_meanshift.csv"))
 
@@ -415,27 +419,177 @@ class Clusterer(object):
         fig.savefig(os.path.join(self.AffinityPropagationFolder, "meanshift.png"), dpi = 300)
         return
 
+    def OPTICS_cluster(self):
+        OPTICS_df = self.dataDF
+        #run PCA on these features
+        features = ['chan_width', 'n', 'SLOPE', 'StreamOrde','DistDwnstrm', 'FCODEnorm', 'chan_depth', 'chan_velocity', 
+                    'unitPower', 'r', 'DASqKm', 'Fb', 'shearStress', 'minEntrain', 'TOTMA', 'sinuosity', 'velocity_var',
+                    'depth_var','width_var', 'n_var','unitPower_var','Fb_var','shearStress_var', 'minEntrain_var']#, 
+                    #'CAT_SILTAVE', 'CAT_SANDAVE', 'CAT_CLAYAVE']
+        x = OPTICS_df.loc[:, features].values # Separating out the features
+        clustering = OPTICS().fit(self.X_normalized)
+        labels = clustering.labels_
+        sns.set_style("white")
+        dataDF = self.dataDF 
+        fig, axs = plt.subplots(ncols=7, figsize=(20, 7))
+        dataDF["cluster"] = labels
+        sns.boxplot(x="cluster", y='logA0', data=dataDF, palette='deep', ax=axs[0])
+        sns.boxplot(x="cluster", y='logn', data=dataDF, palette='deep', ax=axs[1])
+        sns.boxplot(x="cluster", y='b', data=dataDF, palette='deep', ax=axs[2])
+        sns.boxplot(x="cluster", y='logWb', data=dataDF, palette='deep', ax=axs[3])
+        sns.boxplot(x="cluster", y='logDb', data=dataDF, palette='deep', ax=axs[4])
+        sns.boxplot(x="cluster", y='logr', data=dataDF, palette='deep', ax=axs[5])
+        sns.boxplot(x="cluster", y='logchan_width', data=dataDF, palette='deep', ax=axs[6])
 
-    def judge_clustering_result(self, df, folder, name):
+        fig.autofmt_xdate(rotation=90)
+        fig.tight_layout(rect=[0, 0.03, 1, 0.95])
+
+        axs[0].set_ylabel('log A0', fontsize=15)
+        axs[1].set_ylabel('log Mannings n', fontsize=15)
+        axs[2].set_ylabel('b', fontsize=15)
+        axs[3].set_ylabel('log Wb', fontsize=15)
+        axs[4].set_ylabel('log Db', fontsize=15)
+        axs[5].set_ylabel('log r', fontsize=15)
+        axs[6].set_ylabel('log W', fontsize=15)
+
+        axs[0].set_xlabel('')
+        axs[1].set_xlabel('')
+        axs[2].set_xlabel('')
+        axs[3].set_xlabel('AffPro River Type', fontsize=25)
+        axs[4].set_xlabel('')
+        axs[5].set_xlabel('')
+        axs[6].set_xlabel('')
+
+        #save prior distribution parameters
+        priorWbClass = dataDF.groupby('cluster')['logWb'].describe()
+        priorDbClass = dataDF.groupby('cluster')['logDb'].describe()
+        prior_rClass = dataDF.groupby('cluster')['logr'].describe()
+        priorA0Class = dataDF.groupby('cluster')['logA0'].describe()
+        priorNClass = dataDF.groupby('cluster')['logn'].describe()
+        priorBClass = dataDF.groupby('cluster')['b'].describe()
+
+        
+        self.judge_clustering_result(dataDF, self.mergedFolder, "OPTICS")
+
+        priorWbClass.to_csv(os.path.join(self.OPTICSFolder, "Wb_OPTICS.csv"))
+
+        priorDbClass.to_csv(os.path.join(self.OPTICSFolder, "Db_OPTICS.csv"))
+        prior_rClass.to_csv(os.path.join(self.OPTICSFolder, "r_OPTICS.csv"))
+        priorA0Class.to_csv(os.path.join(self.OPTICSFolder, "A0_OPTICS.csv"))
+        priorNClass.to_csv(os.path.join(self.OPTICSFolder, "N_OPTICS.csv"))
+        priorBClass.to_csv(os.path.join(self.OPTICSFolder, "B_OPTICS.csv"))
+
+        fig.savefig(os.path.join(self.AffinityPropagationFolder, "OPTICS.png"), dpi = 300)
+        return
+
+    def BIRCH_cluster(self):
+
+        OPTICS_df = self.dataDF
+        #run PCA on these features
+        features = ['chan_width', 'n', 'SLOPE', 'StreamOrde','DistDwnstrm', 'FCODEnorm', 'chan_depth', 'chan_velocity', 
+                    'unitPower', 'r', 'DASqKm', 'Fb', 'shearStress', 'minEntrain', 'TOTMA', 'sinuosity', 'velocity_var',
+                    'depth_var','width_var', 'n_var','unitPower_var','Fb_var','shearStress_var', 'minEntrain_var']#, 
+                    #'CAT_SILTAVE', 'CAT_SANDAVE', 'CAT_CLAYAVE']
+        x = OPTICS_df.loc[:, features].values # Separating out the features
+        for n_clusters in np.arange(1,30,1):
+            for branching_factor in np.arange(30, 70,5):
+                clustering = Birch(n_clusters = n_clusters, branching_factor = branching_factor).fit(self.X_normalized)                    
+                labels = clustering.labels_
+                OPTICS_df["cluster"] = labels
+                self.judge_clustering_result(OPTICS_df, self.mergedFolder, "BIRCH", "n_clusters:" + str(n_clusters) + "_" "branching_factor:" + "_" + str(branching_factor))
+        
+        labels = clustering.labels_
+        sns.set_style("white")
+        dataDF = self.dataDF 
+        fig, axs = plt.subplots(ncols=7, figsize=(20, 7))
+        dataDF["cluster"] = labels
+        sns.boxplot(x="cluster", y='logA0', data=dataDF, palette='deep', ax=axs[0])
+        sns.boxplot(x="cluster", y='logn', data=dataDF, palette='deep', ax=axs[1])
+        sns.boxplot(x="cluster", y='b', data=dataDF, palette='deep', ax=axs[2])
+        sns.boxplot(x="cluster", y='logWb', data=dataDF, palette='deep', ax=axs[3])
+        sns.boxplot(x="cluster", y='logDb', data=dataDF, palette='deep', ax=axs[4])
+        sns.boxplot(x="cluster", y='logr', data=dataDF, palette='deep', ax=axs[5])
+        sns.boxplot(x="cluster", y='logchan_width', data=dataDF, palette='deep', ax=axs[6])
+
+        fig.autofmt_xdate(rotation=90)
+        fig.tight_layout(rect=[0, 0.03, 1, 0.95])
+
+        axs[0].set_ylabel('log A0', fontsize=15)
+        axs[1].set_ylabel('log Mannings n', fontsize=15)
+        axs[2].set_ylabel('b', fontsize=15)
+        axs[3].set_ylabel('log Wb', fontsize=15)
+        axs[4].set_ylabel('log Db', fontsize=15)
+        axs[5].set_ylabel('log r', fontsize=15)
+        axs[6].set_ylabel('log W', fontsize=15)
+
+        axs[0].set_xlabel('')
+        axs[1].set_xlabel('')
+        axs[2].set_xlabel('')
+        axs[3].set_xlabel('AffPro River Type', fontsize=25)
+        axs[4].set_xlabel('')
+        axs[5].set_xlabel('')
+        axs[6].set_xlabel('')
+
+        #save prior distribution parameters
+        priorWbClass = dataDF.groupby('cluster')['logWb'].describe()
+        priorDbClass = dataDF.groupby('cluster')['logDb'].describe()
+        prior_rClass = dataDF.groupby('cluster')['logr'].describe()
+        priorA0Class = dataDF.groupby('cluster')['logA0'].describe()
+        priorNClass = dataDF.groupby('cluster')['logn'].describe()
+        priorBClass = dataDF.groupby('cluster')['b'].describe()
+
+        
+        self.judge_clustering_result(dataDF, self.mergedFolder, "Birch")
+
+        priorWbClass.to_csv(os.path.join(self.BIRCHFolder, "Wb_Birch.csv"))
+
+        priorDbClass.to_csv(os.path.join(self.BIRCHFolder, "Db_Birch.csv"))
+        prior_rClass.to_csv(os.path.join(self.BIRCHFolder, "r_Birch.csv"))
+        priorA0Class.to_csv(os.path.join(self.BIRCHFolder, "A0_Birch.csv"))
+        priorNClass.to_csv(os.path.join(self.BIRCHFolder, "N_Birch.csv"))
+        priorBClass.to_csv(os.path.join(self.BIRCHFolder, "B_Birch.csv"))
+
+        fig.savefig(os.path.join(self.AffinityPropagationFolder, "Birch.png"), dpi = 300)
+        return
+
+    def judge_clustering_result(self, df, folder, name, params = ''):
 
         cluster = df["cluster"]
         dftemp = df.drop(['cluster'], axis = 1)
 
         # Silhouette Coefficient: si接近1，则说明样本i聚类合理
-        ss = silhouette_score(dftemp, cluster)
+        try:
+            ss = silhouette_score(dftemp, cluster)
 
-        # Calinski-Harabaz Index:分数值ss越大则聚类效果越好
-        chs = calinski_harabasz_score(dftemp, cluster)
+        except:
+            ss = -1
 
-        # DBI(davies_bouldin_score)：值最小是0，值越小，代表聚类效果越好。
-        dbs = davies_bouldin_score(dftemp, cluster)
+         # Calinski-Harabaz Index:分数值ss越大则聚类效果越好
+        try:
+            chs = calinski_harabasz_score(dftemp, cluster)
 
+        except:
+            chs = -1
+
+         # DBI(davies_bouldin_score)：值最小是0，值越小，代表聚类效果越好。
+        try:
+            dbs = davies_bouldin_score(dftemp, cluster)
+
+        except:
+            dbs = -1
+           
+            
         result = pd.DataFrame([ss, chs, dbs]).transpose()
         result.columns = ["ss", "chs", "dbs"]
         path = os.path.join(folder, "result.csv")
-        result["name"] = name
+        result["name"] = name + "_" + params
+        result["group"] = cluster.astype(int).max()
+
+        if cluster.astype(int).max() < 2:
+            return
+
         if os.path.exists(path):
-            df.to_csv(name, mode = "a", header = None, index = False)
+            result.to_csv(path, mode = "a", header = None, index = False)
         else:
-            df.to_csv(name, mode = "a", index = False)
-        return None
+            result.to_csv(path, mode = "a", index = False)
+        return ss, chs, dbs

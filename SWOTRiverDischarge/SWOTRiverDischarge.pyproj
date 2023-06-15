@@ -27,6 +27,7 @@
     <Compile Include="Base\Util.py" />
     <Compile Include="Code\Classification\Cluster.py" />
     <Compile Include="Code\Classification\MergeData.py" />
+    <Compile Include="Code\Classification\WriteResult.py" />
     <Compile Include="Code\Data Filter\CalPrior.py" />
     <Compile Include="Code\Data Filter\FilterGEE.py" />
     <Compile Include="Code\Data Filter\FilterOne.py" />
