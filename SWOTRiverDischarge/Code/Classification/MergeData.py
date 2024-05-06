@@ -159,6 +159,7 @@ class Merger(object):
         self.mergedData['chan_discharge'] = self.mergedData['chan_discharge']*0.028
 
         self.mergedData['n'] = ((self.mergedData['chan_depth'])**(2/3)*self.mergedData['SLOPE']**(1/2))/self.mergedData['chan_velocity']
+
         # 
         self.mergedData['shearStress'] = 9.81*self.mergedData['chan_depth']*self.mergedData['SLOPE']
         # Froude number

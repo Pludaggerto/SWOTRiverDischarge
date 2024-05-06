@@ -4,7 +4,7 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>d6e1ed46-adb7-4ddd-9900-18e26e72d609</ProjectGuid>
     <ProjectHome>.</ProjectHome>
-    <StartupFile>Code\Classification\main.py</StartupFile>
+    <StartupFile>test\test2.py</StartupFile>
     <SearchPath>
     </SearchPath>
     <WorkingDirectory>.</WorkingDirectory>
@@ -67,6 +67,7 @@
     <Compile Include="Code\Simplified calculation\BAM.py" />
     <Compile Include="SWOTRiverDischarge.py" />
     <Compile Include="test\test1.py" />
+    <Compile Include="test\test2.py" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Base\" />
@@ -196,6 +197,7 @@
     <Content Include="note\数据介绍.md" />
     <Content Include="note\算法笔记.md" />
     <Content Include="note\论文阅读.md" />
+    <Content Include="test\中文名.xlsx" />
   </ItemGroup>
   <ItemGroup>
     <InterpreterReference Include="Global|VisualStudio|geos" />

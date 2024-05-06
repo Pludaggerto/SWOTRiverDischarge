@@ -80,6 +80,10 @@ class Classification(Merger, Clusterer, ResultWriter):
         self.OPTICS_cluster()
         self.BIRCH_cluster()
 
+        # test
+        #self.set_data()
+        #self.cluster_alg_test()
+
 def main():
     
     log = logging.getLogger()

@@ -13,7 +13,7 @@ from dbfread                 import DBF
 from sklearn                 import metrics
 from sklearn                 import svm
 from sklearn                 import linear_model
-from sklearn.cluster         import DBSCAN, AffinityPropagation, MeanShift, OPTICS, Birch
+from sklearn.cluster         import DBSCAN, AffinityPropagation, MeanShift, OPTICS, Birch, KMeans, SpectralClustering, AgglomerativeClustering
 from sklearn.preprocessing   import StandardScaler, normalize
 from sklearn.decomposition   import PCA
 from sklearn.metrics         import silhouette_score, calinski_harabasz_score, davies_bouldin_score
@@ -27,6 +27,26 @@ class Clusterer(object):
 
     def __del__(self):
         return
+
+    def set_data(self):
+        dataDF = self.dataDF
+        features = self.dataDF[['chan_width', 'n', 'SLOPE', 'StreamOrde','DistDwnstrm', 'FCODEnorm', 'chan_depth', 'chan_velocity', 
+            'unitPower', 'r', 'DASqKm', 'Fb', 'shearStress', 'minEntrain', 'TOTMA', 'sinuosity', 'velocity_var',
+            'depth_var','width_var', 'n_var','unitPower_var','Fb_var','shearStress_var', 'minEntrain_var']]
+        scaler = StandardScaler() 
+        features = features.dropna()
+        X_scaled = scaler.fit_transform(features) 
+
+        # Normalizing the data so that the data 
+        # approximately follows a Gaussian distribution 
+        X_normalized = normalize(X_scaled) 
+  
+        # Converting the numpy array into a pandas DataFrame 
+        X_normalized = pd.DataFrame(X_normalized) 
+  
+        # Renaming the columns 
+        X_normalized.columns = features.columns 
+        self.X_normalized = X_normalized
 
     #AHG exp function
     def regress(self, data, yvar, xvars):
@@ -113,13 +133,10 @@ class Clusterer(object):
         # Renaming the columns 
         X_normalized.columns = features.columns 
         self.X_normalized = X_normalized
-        for eps in np.arange(0.1, 10, 0.1):
-            for min_samples in np.arange(1, 100, 5):
-                for leaf_size in np.arange(20, 200, 20):
-                    clustering = DBSCAN(eps = eps, min_samples = min_samples, leaf_size = leaf_size).fit(X_normalized)
-                    labels = clustering.labels_
-                    dataDF["cluster"] = labels
-                    self.judge_clustering_result(dataDF, self.mergedFolder, "DBSCAN", "eps:" + str(eps) + "_" "min_samples:" + "_" + str(min_samples) + "leaf_size:" + "_" + str(leaf_size))
+        clustering = DBSCAN(min_samples = 6).fit(X_normalized)
+        labels = clustering.labels_
+        dataDF["cluster"] = labels
+        self.judge_clustering_result(dataDF, self.mergedFolder, "DBSCAN" + "_" + "min_samples:" + "_6")
 
         # Number of clusters in labels, ignoring noise if present.
         n_clusters_ = len(set(labels)) - (1 if -1 in labels else 0)
@@ -131,7 +148,12 @@ class Clusterer(object):
         sns.set_style("white")
         dataDF = self.dataDF 
         fig, axs = plt.subplots(ncols=7, figsize=(20, 7))
-        dataDF["cluster"] = labels
+        dataDF["oldIndex"] = labels
+        oldIndex = list(set(labels))
+        oldIndex.sort()
+        newIndex = dataDF.groupby("oldIndex")["logA0"].mean().sort_values().index 
+        for i in range(len(newIndex)):
+            dataDF["cluster"][dataDF["oldIndex"] == newIndex[i]] = oldIndex[i]
         sns.boxplot(x="cluster", y='logA0', data=dataDF, palette='deep', ax=axs[0])
         sns.boxplot(x="cluster", y='logn', data=dataDF, palette='deep', ax=axs[1])
         sns.boxplot(x="cluster", y='b', data=dataDF, palette='deep', ax=axs[2])
@@ -309,7 +331,12 @@ class Clusterer(object):
         sns.set_style("white")
         dataDF = self.dataDF 
         fig, axs = plt.subplots(ncols=7, figsize=(20, 7))
-        dataDF["cluster"] = labels
+        dataDF["oldIndex"] = labels
+        oldIndex = list(set(labels))
+        oldIndex.sort()
+        newIndex = dataDF.groupby("oldIndex")["logA0"].mean().sort_values().index 
+        for i in range(len(newIndex)):
+            dataDF["cluster"][dataDF["oldIndex"] == newIndex[i]] = oldIndex[i]
         sns.boxplot(x="cluster", y='logA0', data=dataDF, palette='deep', ax=axs[0])
         sns.boxplot(x="cluster", y='logn', data=dataDF, palette='deep', ax=axs[1])
         sns.boxplot(x="cluster", y='b', data=dataDF, palette='deep', ax=axs[2])
@@ -369,7 +396,12 @@ class Clusterer(object):
         sns.set_style("white")
         dataDF = self.dataDF 
         fig, axs = plt.subplots(ncols=7, figsize=(20, 7))
-        dataDF["cluster"] = labels
+        dataDF["oldIndex"] = labels
+        oldIndex = list(set(labels))
+        oldIndex.sort()
+        newIndex = dataDF.groupby("oldIndex")["logA0"].mean().sort_values().index 
+        for i in range(len(newIndex)):
+            dataDF["cluster"][dataDF["oldIndex"] == newIndex[i]] = oldIndex[i]
         sns.boxplot(x="cluster", y='logA0', data=dataDF, palette='deep', ax=axs[0])
         sns.boxplot(x="cluster", y='logn', data=dataDF, palette='deep', ax=axs[1])
         sns.boxplot(x="cluster", y='b', data=dataDF, palette='deep', ax=axs[2])
@@ -416,7 +448,7 @@ class Clusterer(object):
         priorNClass.to_csv(os.path.join(self.meanShiftFolder, "N_meanshift.csv"))
         priorBClass.to_csv(os.path.join(self.meanShiftFolder, "B_meanshift.csv"))
 
-        fig.savefig(os.path.join(self.AffinityPropagationFolder, "meanshift.png"), dpi = 300)
+        fig.savefig(os.path.join(self.meanShiftFolder, "meanshift.png"), dpi = 300)
         return
 
     def OPTICS_cluster(self):
@@ -432,7 +464,12 @@ class Clusterer(object):
         sns.set_style("white")
         dataDF = self.dataDF 
         fig, axs = plt.subplots(ncols=7, figsize=(20, 7))
-        dataDF["cluster"] = labels
+        dataDF["oldIndex"] = labels
+        oldIndex = list(set(labels))
+        oldIndex.sort()
+        newIndex = dataDF.groupby("oldIndex")["logA0"].mean().sort_values().index 
+        for i in range(len(newIndex)):
+            dataDF["cluster"][dataDF["oldIndex"] == newIndex[i]] = oldIndex[i]
         sns.boxplot(x="cluster", y='logA0', data=dataDF, palette='deep', ax=axs[0])
         sns.boxplot(x="cluster", y='logn', data=dataDF, palette='deep', ax=axs[1])
         sns.boxplot(x="cluster", y='b', data=dataDF, palette='deep', ax=axs[2])
@@ -479,7 +516,7 @@ class Clusterer(object):
         priorNClass.to_csv(os.path.join(self.OPTICSFolder, "N_OPTICS.csv"))
         priorBClass.to_csv(os.path.join(self.OPTICSFolder, "B_OPTICS.csv"))
 
-        fig.savefig(os.path.join(self.AffinityPropagationFolder, "OPTICS.png"), dpi = 300)
+        fig.savefig(os.path.join(self.OPTICSFolder, "OPTICS.png"), dpi = 300)
         return
 
     def BIRCH_cluster(self):
@@ -491,18 +528,22 @@ class Clusterer(object):
                     'depth_var','width_var', 'n_var','unitPower_var','Fb_var','shearStress_var', 'minEntrain_var']#, 
                     #'CAT_SILTAVE', 'CAT_SANDAVE', 'CAT_CLAYAVE']
         x = OPTICS_df.loc[:, features].values # Separating out the features
-        for n_clusters in np.arange(1,30,1):
-            for branching_factor in np.arange(30, 70,5):
-                clustering = Birch(n_clusters = n_clusters, branching_factor = branching_factor).fit(self.X_normalized)                    
-                labels = clustering.labels_
-                OPTICS_df["cluster"] = labels
-                self.judge_clustering_result(OPTICS_df, self.mergedFolder, "BIRCH", "n_clusters:" + str(n_clusters) + "_" "branching_factor:" + "_" + str(branching_factor))
+
+        clustering = Birch(n_clusters = 13).fit(self.X_normalized)                    
+        labels = clustering.labels_
+        OPTICS_df["cluster"] = labels
+        #self.judge_clustering_result(OPTICS_df, self.mergedFolder, "BIRCH", "n_clusters:" + str(n_clusters) + "_" "branching_factor:" + "_" + str(branching_factor))
         
         labels = clustering.labels_
         sns.set_style("white")
         dataDF = self.dataDF 
         fig, axs = plt.subplots(ncols=7, figsize=(20, 7))
-        dataDF["cluster"] = labels
+        dataDF["oldIndex"] = labels
+        oldIndex = list(set(labels))
+        oldIndex.sort()
+        newIndex = dataDF.groupby("oldIndex")["logA0"].mean().sort_values().index 
+        for i in range(len(newIndex)):
+            dataDF["cluster"][dataDF["oldIndex"] == newIndex[i]] = oldIndex[i]
         sns.boxplot(x="cluster", y='logA0', data=dataDF, palette='deep', ax=axs[0])
         sns.boxplot(x="cluster", y='logn', data=dataDF, palette='deep', ax=axs[1])
         sns.boxplot(x="cluster", y='b', data=dataDF, palette='deep', ax=axs[2])
@@ -525,7 +566,7 @@ class Clusterer(object):
         axs[0].set_xlabel('')
         axs[1].set_xlabel('')
         axs[2].set_xlabel('')
-        axs[3].set_xlabel('AffPro River Type', fontsize=25)
+        axs[3].set_xlabel('BIRCH River Type', fontsize=25)
         axs[4].set_xlabel('')
         axs[5].set_xlabel('')
         axs[6].set_xlabel('')
@@ -538,7 +579,6 @@ class Clusterer(object):
         priorNClass = dataDF.groupby('cluster')['logn'].describe()
         priorBClass = dataDF.groupby('cluster')['b'].describe()
 
-        
         self.judge_clustering_result(dataDF, self.mergedFolder, "Birch")
 
         priorWbClass.to_csv(os.path.join(self.BIRCHFolder, "Wb_Birch.csv"))
@@ -549,8 +589,39 @@ class Clusterer(object):
         priorNClass.to_csv(os.path.join(self.BIRCHFolder, "N_Birch.csv"))
         priorBClass.to_csv(os.path.join(self.BIRCHFolder, "B_Birch.csv"))
 
-        fig.savefig(os.path.join(self.AffinityPropagationFolder, "Birch.png"), dpi = 300)
+        fig.savefig(os.path.join(self.BIRCHFolder, "Birch.png"), dpi = 300)
         return
+
+    def cluster_alg_test(self):
+        testDF = self.dataDF
+        #run PCA on these features
+        features = ['chan_width', 'n', 'SLOPE', 'StreamOrde','DistDwnstrm', 'FCODEnorm', 'chan_depth', 'chan_velocity', 
+                    'unitPower', 'r', 'DASqKm', 'Fb', 'shearStress', 'minEntrain', 'TOTMA', 'sinuosity', 'velocity_var',
+                    'depth_var','width_var', 'n_var','unitPower_var','Fb_var','shearStress_var', 'minEntrain_var']#, 
+                    #'CAT_SILTAVE', 'CAT_SANDAVE', 'CAT_CLAYAVE']
+        x = testDF.loc[:, features].values # Separating out the features
+        for cluster in range(2,30):
+            clustering = Birch(n_clusters = cluster).fit(x)                    
+            labels = clustering.labels_
+            testDF["cluster"] = labels
+            self.judge_clustering_result(testDF, self.mergedFolder, "BIRCH", "n_clusters:" + str(cluster))
+
+            clustering = KMeans(n_clusters = cluster).fit(x)                    
+            labels = clustering.labels_
+            testDF["cluster"] = labels
+            self.judge_clustering_result(testDF, self.mergedFolder, "KMeans", "n_clusters:" + str(cluster))
+        
+            clustering = SpectralClustering(n_clusters = cluster).fit(x)                    
+            labels = clustering.labels_
+            testDF["cluster"] = labels
+            self.judge_clustering_result(testDF, self.mergedFolder, "SpectralClustering", "n_clusters:" + str(cluster))
+
+            clustering = AgglomerativeClustering(n_clusters = cluster).fit(x)                    
+            labels = clustering.labels_
+            testDF["cluster"] = labels
+            self.judge_clustering_result(testDF, self.mergedFolder, "AgglomerativeClustering", "n_clusters:" + str(cluster))
+
+            pass
 
     def judge_clustering_result(self, df, folder, name, params = ''):
 

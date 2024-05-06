@@ -36,5 +36,6 @@ def main():
     fileName = r"C:\Users\lwx\source\repos\RiverDishcharge\RiverDishcharge\Data\SWOTSampleData"
     reader = SWOTDataReader(fileName)
     reader.read_shp()
+
 if __name__ == '__main__':
     main()
